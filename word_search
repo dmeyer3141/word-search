@@ -1,0 +1,114 @@
+'''
+Given name of an input file containing data in the following format:
+N M
+N rows of M letters
+"WRAP" or "NO_WRAP"
+P
+P words with 1 word per line
+
+(total length will be 1+N+1+1+P lines long)
+
+For each of the P words, you are to output the start and end coordinates of that word in the format 
+"(row_start,column_start) (row_end,column_end)".
+If the word cannot be found in the grid, output "NOT FOUND".
+'''
+
+class board:
+    '''   
+    Internal Values:
+    
+    self._grid: list of equal length strings representing letters in the game board    
+    self._nrows: int representing number of rows in _grid
+    self._ncols: int representing number of columns in _grid   
+    self._words: list of dict with previously searched word as key and result as value (_words[0] for searches without wrapping; _words[1] for searches with wrapping)
+    self._locs: dict with individual characters as keys with a list of their (row,col) locations in grid
+    
+    Member Functions:
+    
+    reset(self) clears all stored results from prior searches
+    find_word(self,word,wrap) searches for word in _grid under wrap specific conditions
+    
+    '''
+    def __init__(self, letters):
+        
+        self._grid = [letters[i] for i in range(len(letters))]
+        self._nrows = len(self._grid)
+        self._ncols = len(self._grid[0])        
+        self._words = [{},{}]
+        self._locs = {}
+        for i in range(0,self._nrows):
+            for j in range(0,self._ncols):
+                if grid[i][j] not in self._locs:
+                    self._locs[grid[i][j]] = []
+                self._locs[grid[i][j]].append((i,j))
+
+    def reset(self)
+        self._words = [{},{}]
+    
+    def find_word(self, word, wrap):
+        '''
+        word is a string representing the word to search for in this grid
+        wrap is a bool specifying whether wrapping may be used in the search
+        
+        returns string with start and end coordinates  '(R0,C0) (Rn,Cn)' if word was found; 'NOT FOUND' otherwise
+        '''
+        def validate(coordinate, rows, cols):
+            #checks if coordinate lies inside the grid area defined by rows and cols
+            return coordinate[0] in range(rows) and coordinate[1] in range(cols)
+        
+      #if word contains characters not present in board, word cant be found regardless of wrapping
+        if not all([self._locs.get(char)!=None for char in word]):
+            self._words[wrap] = 'NOT FOUND'
+            self._words[not wrap] = 'NOT FOUND'
+      #if result of this search is already known, return it
+        if self._words[wrap].get(word):
+            return self._words[wrap][word]
+        
+      #STEPS contains all possible 1 step moves in row,col direction
+      #           up-left,      up, up-right,   left,  right, down-left, down, down-right
+        STEPS = [(-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)]
+        word_found = False
+        
+        for start_loc in self._locs[word[0]]:
+            if word_found: 
+                break
+                
+            for step in STEPS:
+                if word_found:
+                    break
+                    
+              #get indices in step's direction where rest of word would be      
+                next_locs = [(start_loc[0] + word_ind*step[0], start_loc[1]+word_ind*step[1]) for word_ind in range(1,len(word)) ]
+                if wrap: #adjust indices
+                    next_locs = [(n_l[0]%N, n_l[1]%M) for n_l in next_locs]
+                    
+              #if all coordinates lie inside grid, compose grid_word from letters at specified indices
+                if all([validate(n_l,N,M) for n_l in next_locs]):
+                    grid_word = ''.join([grid[n_l[0]][n_l[1]] for n_l in next_locs])
+                    
+                  #check if word is found in grid with no repeating indices
+                    if grid_word == word[1:] and len(set(next_locs+[start_loc])) == len(next_locs+[start_loc]):
+                        word_found = True 
+                        #format output string with start and end coordinates
+                        out_string = '('+str(start_loc[0])+','+str(start_loc[1])+') ('+str(next_locs[-1][0]) + ','+ str(next_locs[-1][1])+')'
+                        self._words[wrap][word] = out_string
+                        
+      #if word hasn't been found yet, update _words[wrap] with NOT FOUND
+        if not self._words[wrap].get(word):
+            self._words[wrap][word] = 'NOT FOUND'
+            
+        return self._words[wrap][word]
+
+def word_search(file_path):
+
+  #extract input data
+    with open(file_path) as file:
+        lines = file.read().split('\n')
+
+    N = int(lines[0][0])
+    game_grid = board(lines[1:N+1])
+    wrap = lines[N+1] == 'WRAP'
+    words = lines[N+3:N+3+int(lines[N+2])]
+    
+  #output search results
+    print('\n'.join([game_grid.find_word(x, wrap) for x in words]))
